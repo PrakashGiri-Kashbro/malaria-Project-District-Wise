@@ -22,7 +22,6 @@ import re
 import io
 import requests
 import pandas as pd
-import pdfplumber
 from pathlib import Path
 from urllib.parse import urlparse
 
