@@ -4,52 +4,45 @@ import plotly.express as px
 import pydeck as pdk
 import json
 
-# -----------------------
-# Load Data
-# -----------------------
+# load
 @st.cache_data
 def load_file():
-    df = pd.read_csv("data/malaria_indicators_btn.csv")
-    return df
+    return pd.read_csv("data/malaria_indicators_btn.csv")
 
 df = load_file()
 
 st.title("Malaria Dashboard (Bhutan)")
-st.write("This is a simple dashboard made for learning. It shows malaria indicators of Bhutan with basic charts and a map.")
+st.write("This is a simple dashboard made for learning. It shows malaria indicators of Bhutan.")
 
 # ------------------------------------------------
-# AUTO-DETECT COLUMN NAMES (Prevents KeyError)
+# SHOW ACTUAL CSV COLUMNS
 # ------------------------------------------------
-cols = list(df.columns)
+st.write("### CSV Columns Detected:")
+st.write(list(df.columns))
 
-indicator_col = None
-for c in cols:
-    if c.lower() in ["indicator", "gho (display)", "indicator_name", "name"]:
-        indicator_col = c
+# ------------------------------------------------
+# USER PICKS COLUMNS (NO MORE ERRORS)
+# ------------------------------------------------
+indicator_col = st.sidebar.selectbox("Select indicator column", df.columns)
+year_col = st.sidebar.selectbox("Select year column", df.columns)
+value_col = st.sidebar.selectbox("Select numeric/value column", df.columns)
 
-year_col = None
-for c in cols:
-    if c.lower() in ["year", "year (display)"]:
-        year_col = c
-
-value_col = None
-for c in cols:
-    if c.lower() in ["value", "numeric", "number", "val"]:
-        value_col = c
-
+# rename internally (safe)
 df = df.rename(columns={
     indicator_col: "indicator_name",
     year_col: "year",
     value_col: "value_num"
 })
 
+# numeric conversion (safe)
 df["value_num"] = pd.to_numeric(df["value_num"], errors="coerce")
 
-# -----------------------
-# Indicator Selection
-# -----------------------
+# ------------------------------------------------
+# indicator selection
+# ------------------------------------------------
 ind_list = df["indicator_name"].dropna().unique()
 picked = st.sidebar.selectbox("Select Indicator", ind_list)
+
 filt = df[df["indicator_name"] == picked]
 
 st.subheader(picked)
@@ -57,25 +50,21 @@ st.subheader(picked)
 # -----------------------
 # Charts
 # -----------------------
-st.write("### Bar Chart")
 fig1 = px.bar(filt, x="year", y="value_num", title=picked)
 st.plotly_chart(fig1, use_container_width=True)
 
-st.write("### Line Chart")
 fig2 = px.line(filt, x="year", y="value_num", markers=True)
 st.plotly_chart(fig2, use_container_width=True)
 
-# -----------------------
-# Table
-# -----------------------
+# table
 st.write("### Data Table")
 st.dataframe(filt)
 
 # -----------------------
-# Bhutan Map
+# Map
 # -----------------------
 st.write("---")
-st.header("Bhutan Map (Simple)")
+st.header("Bhutan Map")
 
 with open("data/bhutan_districts.json", "r") as f:
     geo = json.load(f)
@@ -88,11 +77,7 @@ layer = pdk.Layer(
     get_fill_color="[255, 0, 0, 100]"
 )
 
-view = pdk.ViewState(
-    latitude=27.5,
-    longitude=90.4,
-    zoom=7
-)
+view = pdk.ViewState(latitude=27.5, longitude=90.4, zoom=7)
 
 st.pydeck_chart(
     pdk.Deck(
