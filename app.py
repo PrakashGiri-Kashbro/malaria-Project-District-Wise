@@ -22,41 +22,34 @@ st.write("This is a simple dashboard made for learning. It shows malaria indicat
 # ------------------------------------------------
 cols = list(df.columns)
 
-# find indicator column
 indicator_col = None
 for c in cols:
     if c.lower() in ["indicator", "gho (display)", "indicator_name", "name"]:
         indicator_col = c
 
-# find year column
 year_col = None
 for c in cols:
     if c.lower() in ["year", "year (display)"]:
         year_col = c
 
-# find numeric/value column
 value_col = None
 for c in cols:
     if c.lower() in ["value", "numeric", "number", "val"]:
         value_col = c
 
-# rename to standard
 df = df.rename(columns={
     indicator_col: "indicator_name",
     year_col: "year",
     value_col: "value_num"
 })
 
-# ensure numeric conversion
 df["value_num"] = pd.to_numeric(df["value_num"], errors="coerce")
 
 # -----------------------
 # Indicator Selection
 # -----------------------
 ind_list = df["indicator_name"].dropna().unique()
-
 picked = st.sidebar.selectbox("Select Indicator", ind_list)
-
 filt = df[df["indicator_name"] == picked]
 
 st.subheader(picked)
@@ -84,4 +77,26 @@ st.dataframe(filt)
 st.write("---")
 st.header("Bhutan Map (Simple)")
 
-with open("data/
+with open("data/bhutan_districts.json", "r") as f:
+    geo = json.load(f)
+
+layer = pdk.Layer(
+    "GeoJsonLayer",
+    geo,
+    stroked=True,
+    filled=True,
+    get_fill_color="[255, 0, 0, 100]"
+)
+
+view = pdk.ViewState(
+    latitude=27.5,
+    longitude=90.4,
+    zoom=7
+)
+
+st.pydeck_chart(
+    pdk.Deck(
+        layers=[layer],
+        initial_view_state=view
+    )
+)
