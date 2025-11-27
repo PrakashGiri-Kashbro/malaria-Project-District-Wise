@@ -1,10 +1,12 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import json
 import pydeck as pdk
+import json
 
-# load data
+# -----------------------
+# Load Data
+# -----------------------
 @st.cache_data
 def load_file():
     df = pd.read_csv("data/malaria_indicators_btn.csv")
@@ -13,63 +15,73 @@ def load_file():
 df = load_file()
 
 st.title("Malaria Dashboard (Bhutan)")
-st.write("This is a simple dashboard I made for learning purpose.")
+st.write("This is a simple dashboard made for learning. It shows malaria indicators of Bhutan with basic charts and a map.")
 
-# ---- FIX COLUMN NAMES HERE ----
-# rename columns based on your actual CSV
+# ------------------------------------------------
+# AUTO-DETECT COLUMN NAMES (Prevents KeyError)
+# ------------------------------------------------
+cols = list(df.columns)
+
+# find indicator column
+indicator_col = None
+for c in cols:
+    if c.lower() in ["indicator", "gho (display)", "indicator_name", "name"]:
+        indicator_col = c
+
+# find year column
+year_col = None
+for c in cols:
+    if c.lower() in ["year", "year (display)"]:
+        year_col = c
+
+# find numeric/value column
+value_col = None
+for c in cols:
+    if c.lower() in ["value", "numeric", "number", "val"]:
+        value_col = c
+
+# rename to standard
 df = df.rename(columns={
-    "Indicator": "indicator_name",
-    "Year": "year",
-    "Value": "value_num"
+    indicator_col: "indicator_name",
+    year_col: "year",
+    value_col: "value_num"
 })
 
-# convert numeric column
+# ensure numeric conversion
 df["value_num"] = pd.to_numeric(df["value_num"], errors="coerce")
 
-# sidebar – pick indicator only
+# -----------------------
+# Indicator Selection
+# -----------------------
 ind_list = df["indicator_name"].dropna().unique()
 
 picked = st.sidebar.selectbox("Select Indicator", ind_list)
 
-# filter
 filt = df[df["indicator_name"] == picked]
 
 st.subheader(picked)
 
-# bar chart
+# -----------------------
+# Charts
+# -----------------------
 st.write("### Bar Chart")
 fig1 = px.bar(filt, x="year", y="value_num", title=picked)
 st.plotly_chart(fig1, use_container_width=True)
 
-# line chart
 st.write("### Line Chart")
 fig2 = px.line(filt, x="year", y="value_num", markers=True)
 st.plotly_chart(fig2, use_container_width=True)
 
-# table
+# -----------------------
+# Table
+# -----------------------
 st.write("### Data Table")
 st.dataframe(filt)
 
-# map
+# -----------------------
+# Bhutan Map
+# -----------------------
 st.write("---")
-st.header("Bhutan Map (Simple Version)")
+st.header("Bhutan Map (Simple)")
 
-with open("data/bhutan_districts.json", "r") as f:
-    geo = json.load(f)
-
-layer = pdk.Layer(
-    "GeoJsonLayer",
-    geo,
-    stroked=True,
-    filled=True,
-    get_fill_color="[255, 0, 0, 100]"
-)
-
-view = pdk.ViewState(latitude=27.5, longitude=90.4, zoom=7)
-
-st.pydeck_chart(
-    pdk.Deck(
-        layers=[layer],
-        initial_view_state=view
-    )
-)
+with open("data/
