@@ -13,23 +13,25 @@ def load_file():
 df = load_file()
 
 st.title("Malaria Dashboard (Bhutan)")
-st.write("This is a simple dashboard I made for learning purpose. It shows different malaria indicators of Bhutan.")
+st.write("This is a simple dashboard I made for learning purpose.")
 
-# rename columns to easy names
+# ---- FIX COLUMN NAMES HERE ----
+# rename columns based on your actual CSV
 df = df.rename(columns={
-    "GHO (DISPLAY)": "indicator_name",
-    "YEAR (DISPLAY)": "year",
-    "Numeric": "value_num"
+    "Indicator": "indicator_name",
+    "Year": "year",
+    "Value": "value_num"
 })
 
-# convert to number
+# convert numeric column
 df["value_num"] = pd.to_numeric(df["value_num"], errors="coerce")
 
-# sidebar – user only selects indicator
+# sidebar – pick indicator only
 ind_list = df["indicator_name"].dropna().unique()
 
 picked = st.sidebar.selectbox("Select Indicator", ind_list)
 
+# filter
 filt = df[df["indicator_name"] == picked]
 
 st.subheader(picked)
@@ -44,14 +46,14 @@ st.write("### Line Chart")
 fig2 = px.line(filt, x="year", y="value_num", markers=True)
 st.plotly_chart(fig2, use_container_width=True)
 
-# show table
+# table
 st.write("### Data Table")
 st.dataframe(filt)
 
+# map
 st.write("---")
 st.header("Bhutan Map (Simple Version)")
 
-# load geojson
 with open("data/bhutan_districts.json", "r") as f:
     geo = json.load(f)
 
@@ -63,11 +65,7 @@ layer = pdk.Layer(
     get_fill_color="[255, 0, 0, 100]"
 )
 
-view = pdk.ViewState(
-    latitude=27.5,
-    longitude=90.4,
-    zoom=7
-)
+view = pdk.ViewState(latitude=27.5, longitude=90.4, zoom=7)
 
 st.pydeck_chart(
     pdk.Deck(
